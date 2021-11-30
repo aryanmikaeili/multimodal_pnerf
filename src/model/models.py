@@ -13,12 +13,12 @@ import warnings
 
 
 class PixelNeRFNet(torch.nn.Module):
-    def __init__(self, conf, stop_encoder_grad=False):
+    def __init__(self, conf, stop_encoder_grad=False, add_noise = False, noise_size = 32):
         """
         :param conf PyHocon config subtree 'model'
         """
         super().__init__()
-        self.encoder = make_encoder(conf["encoder"])
+        self.encoder = make_encoder(conf["encoder"], add_noise=add_noise, noise_size=noise_size)
         self.use_encoder = conf.get_bool("use_encoder", True)  # Image features?
 
         self.use_xyz = conf.get_bool("use_xyz", False)
@@ -69,9 +69,9 @@ class PixelNeRFNet(torch.nn.Module):
 
         self.latent_size = self.encoder.latent_size
         self.latent_size_after_noise = self.encoder.latent_size_after_noise
-        self.mlp_coarse = make_mlp(conf["mlp_coarse"], d_in, d_latent, d_out=d_out)
+        self.mlp_coarse = make_mlp(conf["mlp_coarse"], d_in, d_latent, d_out=d_out, add_noise= add_noise, d_noise = noise_size)
         self.mlp_fine = make_mlp(
-            conf["mlp_fine"], d_in, d_latent, d_out=d_out, allow_empty=True
+            conf["mlp_fine"], d_in, d_latent, d_out=d_out, allow_empty=True, add_noise=add_noise, d_noise = noise_size
         )
         # Note: this is world -> camera, and bottom row is omitted
         self.register_buffer("poses", torch.empty(1, 3, 4), persistent=False)

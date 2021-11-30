@@ -6,7 +6,13 @@ import os
 
 
 
+###Aryan's args####
 noise_size = 32
+add_noise = True
+###################
+
+
+
 os.chdir('/tmp/pycharm_project_65/')
 sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -65,7 +71,7 @@ print(
     "dset z_near {}, z_far {}, lindisp {}".format(dset.z_near, dset.z_far, dset.lindisp)
 )
 
-net = make_model(conf["model"]).to(device=device)
+net = make_model(conf["model"], add_noise = add_noise, noise_size = noise_size).to(device=device)
 net.stop_encoder_grad = args.freeze_enc
 if args.freeze_enc:
     print("Encoder frozen")
@@ -200,8 +206,9 @@ class PixelNeRFTrainer(trainlib.Trainer):
             c=all_c.to(device=device) if all_c is not None else None,
         )
 
-        noise = torch.randn((SB, noise_size, 1, 1)).expand(SB, noise_size, net.encoder.latent.shape[2],  net.encoder.latent.shape[2]).to(device)
-        net.encoder.latent = torch.cat((net.encoder.latent , noise), dim = 1)
+        if add_noise:
+            noise = torch.randn((SB, noise_size, 1, 1)).expand(SB, noise_size, net.encoder.latent.shape[2],  net.encoder.latent.shape[2]).to(device)
+            net.encoder.latent = torch.cat((net.encoder.latent , noise), dim = 1)
 
         render_dict = DotMap(render_par(all_rays, want_weights=True,))
         coarse = render_dict.coarse
@@ -281,9 +288,10 @@ class PixelNeRFTrainer(trainlib.Trainer):
                 c=c.to(device=device) if c is not None else None,
             )
 
-            noise = torch.randn((1, noise_size, 1, 1)).expand(1, noise_size, net.encoder.latent.shape[2],
-                                                               net.encoder.latent.shape[2]).to(device)
-            net.encoder.latent = torch.cat((net.encoder.latent, noise), dim=1)
+            if add_noise:
+                noise = torch.randn((1, noise_size, 1, 1)).expand(1, noise_size, net.encoder.latent.shape[2],
+                                                                   net.encoder.latent.shape[2]).to(device)
+                net.encoder.latent = torch.cat((net.encoder.latent, noise), dim=1)
             test_rays = test_rays.reshape(1, H * W, -1)
             render_dict = DotMap(render_par(test_rays, want_weights=True))
             coarse = render_dict.coarse

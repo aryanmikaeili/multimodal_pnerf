@@ -75,6 +75,7 @@ class ResnetFC(nn.Module):
         combine_layer=1000,
         combine_type="average",
         use_spade=False,
+        add_noise = False
     ):
         """
         :param d_in input size
@@ -88,10 +89,17 @@ class ResnetFC(nn.Module):
 
         self.n_blocks = n_blocks
         self.d_noise = d_noise
-        self.d_latent = d_latent + d_noise
+
+        self.d_latent = d_latent
+        if add_noise:
+            self.d_latent += d_noise
+
         self.d_in = d_in
         self.d_out = d_out
-        self.d_hidden = d_hidden + d_noise
+
+        self.d_hidden = d_hidden
+        if add_noise:
+            self.d_hidden += d_noise
 
         if d_in > 0:
             self.lin_in = nn.Linear(self.d_in, self.d_hidden)
